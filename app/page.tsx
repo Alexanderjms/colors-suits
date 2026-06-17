@@ -117,7 +117,7 @@ export default function Home() {
             <button
               type="button"
               onClick={handleClear}
-              className="self-start rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--color-muted)] transition-colors duration-200 ease-out hover:bg-[var(--color-primary)]/5 hover:text-[var(--color-ink)]"
+              className="self-start cursor-pointer rounded-md border border-[var(--color-outline)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)] transition-colors duration-200 ease-out hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-ink)]"
             >
               Limpiar selección
             </button>

@@ -39,7 +39,7 @@ export default function GarmentSelector({
         <Icon icon={iconName} width={16} height={16} />
         {title}
       </h2>
-      <div className="grid grid-cols-5 gap-1 sm:grid-cols-5 md:grid-cols-5">
+      <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 md:grid-cols-5">
         {items.map((item) => {
           const compatibility = getCompatibility(type, item.id, selection);
           const isCompatible = compatibility !== "incompatible";

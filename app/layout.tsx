@@ -8,7 +8,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Combinador de Outfits",
+  title: "colors-suits",
   description:
     "Descubrí combinaciones de color entre camisas, pantalones y zapatos.",
 };
