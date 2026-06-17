@@ -14,8 +14,9 @@ interface Photo {
 type Status = "idle" | "loading" | "ready" | "error" | "no-key";
 
 const QUERIES = [
-  "men casual outfit style",
-  "men office outfit style",
+  "men business suit style",
+  "men formal attire style",
+  "men elegant outfit smart",
 ];
 
 const CACHE_KEY = "inspiration-photos";
