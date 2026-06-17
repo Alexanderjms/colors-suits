@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import type { SelectionState } from "@/lib/colors";
-import { getItem } from "@/lib/colors";
 
 interface Photo {
   id: string;
@@ -15,42 +13,15 @@ interface Photo {
 
 type Status = "idle" | "loading" | "ready" | "error" | "no-key";
 
-const NAME_TO_EN: Record<string, string> = {
-  blanco: "white",
-  negro: "black",
-  "azul claro": "light blue",
-  "azul marino": "navy blue",
-  "gris claro": "light gray",
-  "gris oscuro": "dark gray",
-  beige: "beige",
-  crema: "cream",
-  rosa: "pink",
-  rojo: "red",
-  burdeos: "burgundy",
-  "verde oliva": "olive green",
-  mostaza: "mustard",
-  "marrón": "brown",
-  "marrón oscuro": "dark brown",
-  denim: "denim",
-  lavanda: "lavender",
-  coral: "coral",
-  salmón: "salmon",
-  camel: "camel",
-  celeste: "sky blue",
-  caqui: "khaki",
-  gris: "gray",
-  borgoña: "burgundy",
-  tostado: "tan",
-  coñac: "cognac",
-  grafito: "charcoal",
-};
+const QUERIES = [
+  "men casual outfit style",
+  "men office outfit style",
+];
 
-const DEFAULT_QUERY = "men outfit flat lay";
 const CACHE_KEY = "inspiration-photos";
-const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
+const CACHE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 hours
 
 interface CacheEntry {
-  query: string;
   photos: Photo[];
   timestamp: number;
 }
@@ -65,94 +36,70 @@ function readCache(): CacheEntry | null {
   }
 }
 
-function writeCache(query: string, photos: Photo[]) {
+function writeCache(photos: Photo[]) {
   try {
     localStorage.setItem(
       CACHE_KEY,
-      JSON.stringify({ query, photos, timestamp: Date.now() }),
+      JSON.stringify({ photos, timestamp: Date.now() }),
     );
   } catch {
     // ignore
   }
 }
 
-function buildQuery(selection: SelectionState): string {
-  const parts: string[] = [];
-
-  if (selection.shirt) {
-    const item = getItem("shirt", selection.shirt);
-    if (item) parts.push(NAME_TO_EN[item.id] ?? item.name.toLowerCase());
-  }
-  if (selection.pants) {
-    const item = getItem("pants", selection.pants);
-    if (item) parts.push(NAME_TO_EN[item.id] ?? item.name.toLowerCase());
-  }
-  if (selection.shoes) {
-    const item = getItem("shoes", selection.shoes);
-    if (item) parts.push(NAME_TO_EN[item.id] ?? item.name.toLowerCase());
-  }
-
-  if (parts.length === 0) return DEFAULT_QUERY;
-
-  return [...parts, "men outfit flat lay"].join(" ");
+function pickQuery(): string {
+  const dayIndex = Math.floor(Date.now() / CACHE_DURATION_MS);
+  return QUERIES[dayIndex % QUERIES.length];
 }
 
 interface ReferencePhotosProps {
-  selection: SelectionState;
+  selection?: { shirt: string | null; pants: string | null; shoes: string | null };
 }
 
-export default function ReferencePhotos({ selection }: ReferencePhotosProps) {
+export default function ReferencePhotos(_props: ReferencePhotosProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [status, setStatus] = useState<Status>("idle");
 
-  const fetchPhotos = useCallback(
-    async (query: string, useCache: boolean) => {
-      if (useCache) {
-        const cache = readCache();
-        if (
-          cache &&
-          cache.query === query &&
-          Date.now() - cache.timestamp < CACHE_DURATION_MS
-        ) {
-          setPhotos(cache.photos);
-          setStatus("ready");
-          return;
-        }
-      }
-
-      try {
-        const res = await fetch(
-          `/api/unsplash?q=${encodeURIComponent(query)}`,
-        );
-
-        if (res.status === 503) {
-          setStatus("no-key");
-          return;
-        }
-
-        if (!res.ok) {
-          setStatus("error");
-          return;
-        }
-
-        const data = await res.json();
-        const newPhotos: Photo[] = data.photos ?? [];
-
-        setPhotos(newPhotos);
+  const fetchPhotos = useCallback(async (useCache: boolean) => {
+    if (useCache) {
+      const cache = readCache();
+      if (cache && Date.now() - cache.timestamp < CACHE_DURATION_MS) {
+        setPhotos(cache.photos);
         setStatus("ready");
-        writeCache(query, newPhotos);
-      } catch {
-        setStatus("error");
+        return;
       }
-    },
-    [],
-  );
+    }
+
+    const query = pickQuery();
+
+    try {
+      const res = await fetch(`/api/unsplash?q=${encodeURIComponent(query)}`);
+
+      if (res.status === 503) {
+        setStatus("no-key");
+        return;
+      }
+
+      if (!res.ok) {
+        setStatus("error");
+        return;
+      }
+
+      const data = await res.json();
+      const newPhotos: Photo[] = data.photos ?? [];
+
+      setPhotos(newPhotos);
+      setStatus("ready");
+      writeCache(newPhotos);
+    } catch {
+      setStatus("error");
+    }
+  }, []);
 
   useEffect(() => {
-    const query = buildQuery(selection);
     setStatus("loading");
-    fetchPhotos(query, true);
-  }, [selection, fetchPhotos]);
+    fetchPhotos(true);
+  }, [fetchPhotos]);
 
   return (
     <section className="flex flex-col gap-3">
@@ -162,7 +109,7 @@ export default function ReferencePhotos({ selection }: ReferencePhotosProps) {
 
       {status === "loading" && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
               className="aspect-[4/3] animate-pulse rounded-lg bg-[var(--color-surface)]"
@@ -173,7 +120,7 @@ export default function ReferencePhotos({ selection }: ReferencePhotosProps) {
 
       {status === "ready" && photos.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {photos.slice(0, 3).map((photo) => (
+          {photos.map((photo) => (
             <a
               key={photo.id}
               href={photo.unsplashUrl}
